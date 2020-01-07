@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace GraZaDuzoZaMalo.Model
 {
@@ -56,7 +58,7 @@ namespace GraZaDuzoZaMalo.Model
         /// Domyślna wartość wynosi 100. Wartość jest ustawiana w konstruktorze i nie może zmienić się podczas życia obiektu gry.
         /// </value>
         [DataMember]
-        public int MaxLiczbaDoOdgadniecia { get; private set; } = 100;
+        public int MaxLiczbaDoOdgadniecia { get; set; } = 100;
 
         /// <summary>
         /// Dolne ograniczenie losowanej liczby, która ma zostać odgadnięta.
@@ -65,11 +67,10 @@ namespace GraZaDuzoZaMalo.Model
         /// Domyślna wartość wynosi 1. Wartość jest ustawiana w konstruktorze i nie może zmienić się podczas życia obiektu gry.
         /// </value>
         [DataMember]
-        public int MinLiczbaDoOdgadniecia { get; private set; } = 1;
+        public int MinLiczbaDoOdgadniecia { get; set; } = 1;
 
         [DataMember]
-        readonly private int liczbaDoOdgadniecia;
-
+        private int liczbaDoOdgadniecia;
 
         /// <summary>
         /// Typ wyliczeniowy opisujący możliwe statusy gry.
@@ -94,26 +95,39 @@ namespace GraZaDuzoZaMalo.Model
         /// <para>Zmiana wartości zmiennej na <see cref="Gra.Status.Zakonczona"/> w metodzie <see cref="Propozycja(int)"/>, po podaniu poprawnej, odgadywanej liczby.</para>
         /// </remarks>
         [DataMember]
-        public Status StatusGry { get; private set; }
+        public Status StatusGry { get; set; }
 
         [DataMember]
         private List<Ruch> listaRuchow;
 
-        
-        public IReadOnlyList<Ruch> ListaRuchow { get { return listaRuchow.AsReadOnly(); } }
+        public List<Ruch> ListaRuchow { get { return listaRuchow; } }
 
         /// <summary>
         /// Czas rozpoczęcia gry, ustawiany w momencie utworzenia obiektu gry, w konstruktorze. Nie można go już zmodyfikować podczas życia obiektu.
         /// </summary>
         [DataMember]
-        public DateTime CzasRozpoczecia { get; private set; }
-        public DateTime? CzasZakonczenia { get; private set; }
+        public DateTime CzasRozpoczecia { get; set; }
+
+        [DataMember]
+        public DateTime? CzasZakonczenia { get; set; }
 
         /// <summary>
         /// Zwraca aktualny stan gry, od chwili jej utworzenia (wywołania konstruktora) do momentu wywołania tej własciwości.
         /// </summary>
         public TimeSpan AktualnyCzasGry => DateTime.Now - CzasRozpoczecia;
         public TimeSpan CalkowityCzasGry => (StatusGry == Status.WTrakcie) ? AktualnyCzasGry : (TimeSpan)(CzasZakonczenia - CzasRozpoczecia);
+
+        public void Serialize()
+        {
+            listaRuchow.RemoveAt(listaRuchow.Count - 1);
+            string filename = Directory.GetCurrentDirectory() + "\\Gra.xml";
+            var serializer = new DataContractSerializer(typeof(Gra));
+
+            using (var stream = File.Open(filename, FileMode.Create))
+            {
+                serializer.WriteObject(stream, this);
+            }
+        }
 
         public Gra(int min, int max)
         {
@@ -169,7 +183,7 @@ namespace GraZaDuzoZaMalo.Model
             {
                 StatusGry = Status.Zawieszona;
                 CzasZakonczenia = DateTime.Now;
-                //listaRuchow.Add(new Ruch(null, null, Status.WTrakcie));
+                listaRuchow.Add(new Ruch(null, null, Status.WTrakcie));
             }
 
             return liczbaDoOdgadniecia;
@@ -196,7 +210,9 @@ namespace GraZaDuzoZaMalo.Model
             [DataMember]
             public DateTime Czas { get; set; }
 
-            public Ruch(int? propozycja, Odpowiedz? odp, Status statusGry)
+            public Ruch() { }
+
+            public Ruch(int? propozycja, Odpowiedz? odp, Status statusGry): this()
             {
                 this.Liczba = propozycja;
                 this.Wynik = odp;

@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Serialization;
 using GraZaDuzoZaMalo.Model;
+using static GraZaDuzoZaMalo.Model.Gra;
 using static GraZaDuzoZaMalo.Model.Gra.Odpowiedz;
 
 namespace AppGraZaDuzoZaMaloCLI
@@ -34,8 +38,39 @@ namespace AppGraZaDuzoZaMaloCLI
         public void Uruchom()
         {
             widok.OpisGry();
+
+            PrzywrocStan();
+
             while (widok.ChceszKontynuowac("Czy chcesz kontynuować aplikację (t/n)? "))
                 UruchomRozgrywke();
+        }
+
+        public void PrzywrocStan()
+        {
+            try
+            {
+                string filename = Directory.GetCurrentDirectory() + "\\Gra.xml";
+                var serializer = new DataContractSerializer(typeof(Gra));
+                FileStream fs = new FileStream(filename, FileMode.Open);
+                XmlDictionaryReader reader = XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas());
+
+                gra = (Gra)serializer.ReadObject(reader);
+                reader.Close();
+                fs.Close();
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Jest możliwe przywrócenie poprzedniego stanu gry");
+                foreach (var item in gra.ListaRuchow)
+                {
+                    Console.WriteLine(item.ToString());
+                }
+                Console.ResetColor();
+            }
+            catch (Exception)
+            {
+
+            }
+            
         }
 
         public void UruchomRozgrywke()
@@ -110,6 +145,8 @@ namespace AppGraZaDuzoZaMaloCLI
         public void ZakonczRozgrywke()
         {
             gra.Przerwij();
+
+            gra.Serialize();
         }
 
         /// <summary>

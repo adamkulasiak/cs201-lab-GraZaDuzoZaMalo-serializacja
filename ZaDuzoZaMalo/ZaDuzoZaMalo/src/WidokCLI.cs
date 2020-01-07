@@ -36,6 +36,10 @@ namespace AppGraZaDuzoZaMaloCLI
                     wynik = Int32.Parse(value);
                     sukces = true;
                 }
+                catch (KoniecGryException)
+                {
+                    kontroler.ZakonczRozgrywke();
+                }
                 catch (FormatException)
                 {
                     WriteLine("Podana przez Ciebie wartość nie przypomina liczby! Spróbuj raz jeszcze.");
